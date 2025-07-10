@@ -1,3 +1,22 @@
+## Expanded, Installation
+This fork aims to introduce some additions and changes to xtouch for the 2.8inch screen. Be aware that installing it (at least for now) will be a bit more trouble if you aren't a programmer, because I'll not release compiled firmware images at this time.
+To install it, the easiest way (for now) is using Vistual Studio, installing the PlatformIO extension, download this repository, select esp32dev_usb as build target, connect your ESP32 via USB and click upload.
+
+### Improvements
+- The homescreen now shows the preperation stages (such as heatbed preheating etc) when you start a print
+
+### Changes
+- Changed the firmware update mechanism to ArduinoOTA, allowing push updates via the local WiFi (due to convincience when working on it)
+
+### Planed
+- Entirely moving away from requiring an SD Card. This will complicate the setup a bit, but otherwise the SD card is unnecessary
+- More AMS support such as loaded filaments/colors, humidity, remaining filament and so on.
+- Possibly support for a air quality sensor, to monitor the chamber environment while printing hazardous filaments 
+
+
+
+## Original Readme
+
 # ![image](readme-assets/xtouch.png)
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/I3I8PSAYU)
