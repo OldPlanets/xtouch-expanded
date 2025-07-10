@@ -346,7 +346,11 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
         }
 
         // stg
-        // stg_cur
+
+        if (incomingJson["print"].containsKey("stg_cur"))
+        {
+            bambuStatus.stg_cur = incomingJson["print"]["stg_cur"].as<int>();
+        }
         // filam_bak
         // mess_production_state
         // lifecycle
@@ -596,7 +600,8 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
             incomingJson["print"].containsKey("mc_remaining_time") ||
             incomingJson["print"].containsKey("mc_percent") ||
             incomingJson["print"].containsKey("spd_lvl") ||
-            incomingJson["print"].containsKey("spd_mag"))
+            incomingJson["print"].containsKey("spd_mag") ||
+            incomingJson["print"].containsKey("stg_cur"))
         {
 
             xtouch_mqtt_sendMsg(XTOUCH_ON_PRINT_STATUS);

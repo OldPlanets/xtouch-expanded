@@ -22,13 +22,24 @@
 DynamicJsonDocument xtouch_load_config()
 {
     DynamicJsonDocument config = xtouch_filesystem_readJson(SD, xtouch_paths_config);
-
-    strcpy(xTouchConfig.xTouchAccessCode, config["mqtt"]["accessCode"].as<const char *>());
-    strcpy(xTouchConfig.xTouchSerialNumber, config["mqtt"]["serialNumber"].as<const char *>());
-    strcpy(xTouchConfig.xTouchHost, config["mqtt"]["host"].as<const char *>());
-    strcpy(xTouchConfig.xTouchPrinterModel, config["mqtt"]["printerModel"].as<const char *>());
-
-    return xtouch_filesystem_readJson(SD, xtouch_paths_config);
+    
+    // Check if the JSON was loaded successfully and contains the required fields
+    if (!config.isNull() && config.containsKey("mqtt")) {
+        if (config["mqtt"].containsKey("accessCode")) {
+            strcpy(xTouchConfig.xTouchAccessCode, config["mqtt"]["accessCode"].as<const char *>());
+        }
+        if (config["mqtt"].containsKey("serialNumber")) {
+            strcpy(xTouchConfig.xTouchSerialNumber, config["mqtt"]["serialNumber"].as<const char *>());
+        }
+        if (config["mqtt"].containsKey("host")) {
+            strcpy(xTouchConfig.xTouchHost, config["mqtt"]["host"].as<const char *>());
+        }
+        if (config["mqtt"].containsKey("printerModel")) {
+            strcpy(xTouchConfig.xTouchPrinterModel, config["mqtt"]["printerModel"].as<const char *>());
+        }
+    }
+    
+    return config;
 }
 
 #endif

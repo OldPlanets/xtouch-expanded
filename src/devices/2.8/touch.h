@@ -46,27 +46,82 @@ ScreenPoint getScreenCoords(int16_t x, int16_t y)
     return (ScreenPoint(xCoord, yCoord));
 }
 
-void xtouch_loadTouchConfig(XTouchPanelConfig &config)
+bool xtouch_loadTouchConfig(XTouchPanelConfig &config)
 {
+    ConsoleError.println(F("[XTouch][Touch] Starting load config"));
+    
+    // Initialize with safe defaults in case of failure
+    config.xCalM = 1.0;
+    config.yCalM = 1.0;
+    config.xCalC = 0.0;
+    config.yCalC = 0.0;
+    
     // Open file for reading
     File file = xtouch_filesystem_open(SD, xtouch_paths_touch);
+    if (!file)
+    {
+        ConsoleError.println(F("[XTouch][Touch] Failed to open file"));
+        return false;
+    }
 
-    // Allocate a temporary JsonDocument
-    // Don't forget to change the capacity to match your requirements.
-    // Use arduinojson.org/v6/assistant to compute the capacity.
-    StaticJsonDocument<512> doc;
-
+    ConsoleError.println(F("[XTouch][Touch] File opened"));
+    
+    // Read file into a String first to avoid direct parsing issues
+    String jsonString = "";
+    while (file.available()) {
+        jsonString += (char)file.read();
+    }
+    file.close();
+    
+    ConsoleError.println(F("[XTouch][Touch] File read, size: "));
+    ConsoleError.println(jsonString.length());
+    ConsoleError.println(jsonString.c_str());
+    
+    // Use a larger buffer to be safe
+    DynamicJsonDocument doc(1024);
+    
     // Deserialize the JSON document
-    DeserializationError error = deserializeJson(doc, file);
+    DeserializationError error = deserializeJson(doc, jsonString);
+    
     if (error)
-        ConsoleError.println(F("[XTouch][Touch] Failed to read touch config"));
-
+    {
+        ConsoleError.println(F("[XTouch][Touch] JSON parse error: "));
+        ConsoleError.println(error.c_str());
+        return false;
+    }
+    
+    ConsoleError.println(F("[XTouch][Touch] JSON parsed successfully"));
+    
+    // Check if all required fields exist and are the correct type
+    if (!doc.containsKey("xCalM") || !doc["xCalM"].is<float>()) {
+        ConsoleError.println(F("[XTouch][Touch] Invalid xCalM field"));
+        return false;
+    }
+    
+    if (!doc.containsKey("yCalM") || !doc["yCalM"].is<float>()) {
+        ConsoleError.println(F("[XTouch][Touch] Invalid yCalM field"));
+        return false;
+    }
+    
+    if (!doc.containsKey("xCalC") || !doc["xCalC"].is<float>()) {
+        ConsoleError.println(F("[XTouch][Touch] Invalid xCalC field"));
+        return false;
+    }
+    
+    if (!doc.containsKey("yCalC") || !doc["yCalC"].is<float>()) {
+        ConsoleError.println(F("[XTouch][Touch] Invalid yCalC field"));
+        return false;
+    }
+    
+    // All fields exist and are valid, now read them
+    ConsoleError.println(F("[XTouch][Touch] Reading values"));
     config.xCalM = doc["xCalM"].as<float>();
     config.yCalM = doc["yCalM"].as<float>();
     config.xCalC = doc["xCalC"].as<float>();
     config.yCalC = doc["yCalC"].as<float>();
 
-    file.close();
+    ConsoleError.println(F("[XTouch][Touch] Config loaded successfully"));
+    return true;
 }
 
 void xtouch_saveTouchConfig(XTouchPanelConfig &config)
@@ -97,8 +152,10 @@ void xtouch_touch_setup()
 {
     if (hasTouchConfig())
     {
-        ConsoleInfo.println(F("[XTouch][TOUCH] Load from disk"));
+        ConsoleInfo.println(F("[XTouch][TOUCH] Load from disk..."));
         xtouch_loadTouchConfig(x_touch_touchConfig);
+        ConsoleInfo.println(F("[XTouch][TOUCH] ...Done"));
+        delay(50);
     }
     else
     {

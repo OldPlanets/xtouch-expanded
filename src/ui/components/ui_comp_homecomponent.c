@@ -18,6 +18,120 @@ const char *xtouch_device_get_print_state()
     }
 }
 
+const char* xtouch_device_get_current_stage()
+{
+    switch(bambuStatus.stg_cur) {
+    case 0:
+        return "Printing";
+    case 1:
+        return "Auto bed leveling";
+    case 2:
+        return "Heatbed preheating";
+    case 3:
+        return "Vibration compensation";
+    case 4:
+        return "Changing filament";
+    case 5:
+        return "M400 pause";
+    case 6:
+        return "Paused due to filament runout";
+    case 7:
+        return "Heating hotend";
+    case 8:
+        return "Calibrating extrusion";
+    case 9:
+        return "Scanning bed surface";
+    case 10:
+        return "Inspecting first layer";
+    case 11:
+        return "Identifying build plate type";
+    case 12:
+        return "Calibrating Micro Lidar";
+    case 13:
+        return "Homing toolhead";
+    case 14:
+        return "Cleaning nozzle tip";
+    case 15:
+        return "Checking extruder temperature";
+    case 16:
+        return "Printing was paused by the user";
+    case 17:
+        return "Pause of front cover falling";
+    case 18:
+        return "Calibrating the micro lidar";
+    case 19:
+        return "Calibrating extrusion flow";
+    case 20:
+        return "Paused due to nozzle temperature malfunction";
+    case 21:
+        return "Paused due to heat bed temperature malfunction";
+    case 22:
+        return "Filament unloading";
+    case 23:
+        return "Skip step pause";
+    case 24:
+        return "Filament loading";
+    case 25:
+        return "Motor noise cancellation";
+    case 26:
+        return "Paused due to AMS lost";
+    case 27:
+        return "Paused due to low speed of the heat break fan";
+    case 28:
+        return "Paused due to chamber temperature control error";
+    case 29:
+        return "Cooling chamber";
+    case 30:
+        return "Paused by the Gcode inserted by user";
+    case 31:
+        return "Motor noise showoff";
+    case 32:
+        return "Nozzle filament covered detected pause";
+    case 33:
+        return "Cutter error pause";
+    case 34:
+        return "First layer error pause";
+    case 35:
+        return "Nozzle clog pause";
+    case 36:
+        return "Check printer absolute accuracy before calibration";
+    case 37:
+        return "Absolute accuracy calibration";
+    case 38:
+        return "Check printer absolute accuracy after calibration";
+    case 39:
+        return "Nozzle offset calibration";
+    case 40:
+        return "high temperature auto bed levelling";
+    case 41:
+        return "Auto Check: Quick Release Lever";
+    case 42:
+        return "Auto Check: Door and Upper Cover";
+    case 43:
+        return "Laser Calibration";
+    case 44:
+        return "Auto Check: Platform";
+    case 45:
+        return "Confirming birdeye camera position";
+    case 46:
+        return "Calibrating birdeye camera";
+    case 47:
+        return "Auto bed leveling -phase 1";
+    case 48:
+        return "Auto bed leveling -phase 2";
+    case 49:
+        return "Heating chamber";
+    case 50:
+        return "Heated bed cooling";
+    case 51:
+        return "Printing calibration lines";
+    default:
+        ;
+    }
+    return "";
+}
+
+
 void ui_event_comp_homeComponent_mainScreenPlayPauseButton(lv_event_t *e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
@@ -284,6 +398,19 @@ void onXTouchPrintStatus(lv_event_t *e)
         lv_label_set_text(statusCaption, xtouch_device_get_print_state());
         lv_obj_add_state(dropDown, LV_STATE_DISABLED);
         break;
+    }
+
+    if ((bambuStatus.print_status == XTOUCH_PRINT_STATUS_PAUSED || bambuStatus.print_status == XTOUCH_PRINT_STATUS_RUNNING ||  bambuStatus.print_status == XTOUCH_PRINT_STATUS_PREPARE)
+            && bambuStatus.stg_cur != 0 && xtouch_device_get_current_stage()[0] != '\0')
+    {
+        lv_obj_add_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER2], LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER3], LV_OBJ_FLAG_HIDDEN);
+        lv_label_set_text(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER3_MAINSCREENSTAGE], xtouch_device_get_current_stage());
+    }
+    else
+    {
+        lv_obj_add_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER3], LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER2], LV_OBJ_FLAG_HIDDEN);
     }
 
     lv_obj_clear_state(playPauseButton, LV_STATE_DISABLED);
@@ -714,6 +841,41 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     lv_obj_set_scrollbar_mode(cui_mainScreenLayer, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_text_font(cui_mainScreenLayer, &lv_font_montserrat_14, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    lv_obj_t *cui_mainScreenController3;
+    cui_mainScreenController3 = lv_obj_create(cui_mainScreenPlayer);
+    lv_obj_set_width(cui_mainScreenController3, lv_pct(100));
+    lv_obj_set_flex_grow(cui_mainScreenController3, 1);
+    lv_obj_set_x(cui_mainScreenController3, 364);
+    lv_obj_set_y(cui_mainScreenController3, 210);
+    lv_obj_set_flex_flow(cui_mainScreenController3, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(cui_mainScreenController3, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_add_flag(cui_mainScreenController3, LV_OBJ_FLAG_HIDDEN); // Hidden by default
+    lv_obj_clear_flag(cui_mainScreenController3, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_GESTURE_BUBBLE | LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN);
+    lv_obj_set_scrollbar_mode(cui_mainScreenController3, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_style_radius(cui_mainScreenController3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(cui_mainScreenController3, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(cui_mainScreenController3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(cui_mainScreenController3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(cui_mainScreenController3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(cui_mainScreenController3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(cui_mainScreenController3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(cui_mainScreenController3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_row(cui_mainScreenController3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_column(cui_mainScreenController3, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(cui_mainScreenController3, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(cui_mainScreenController3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t *cui_mainScreenStage;
+    cui_mainScreenStage = lv_label_create(cui_mainScreenController3);
+    lv_obj_set_width(cui_mainScreenStage, lv_pct(100));
+    lv_obj_set_height(cui_mainScreenStage, LV_SIZE_CONTENT);
+    lv_label_set_long_mode(cui_mainScreenStage, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_label_set_text(cui_mainScreenStage, "Printing");
+    lv_obj_clear_flag(cui_mainScreenStage, LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_GESTURE_BUBBLE | LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN);
+    lv_obj_set_scrollbar_mode(cui_mainScreenStage, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_style_text_font(cui_mainScreenStage, &lv_font_montserrat_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(cui_mainScreenStage, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+
     lv_obj_t *cui_mainScreenCentral;
     cui_mainScreenCentral = lv_obj_create(cui_mainScreenLeft);
     lv_obj_set_width(cui_mainScreenCentral, lv_pct(100));
@@ -1015,6 +1177,8 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     children[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER2] = cui_mainScreenController2;
     children[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER2_MAINSCREENLAYERICON] = cui_mainScreenLayerIcon;
     children[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER2_MAINSCREENLAYER] = cui_mainScreenLayer;
+    children[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER3] = cui_mainScreenController3;
+    children[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER3_MAINSCREENSTAGE] = cui_mainScreenStage;
     children[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENCENTRAL] = cui_mainScreenCentral;
     children[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENCENTRAL_MAINSCREENSPEEDICON] = cui_mainScreenSpeedIcon;
     children[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENCENTRAL_MAINSCREENSPEEDDROPDOWN] = cui_mainScreenSpeedDropDown;

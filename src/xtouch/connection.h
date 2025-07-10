@@ -5,9 +5,11 @@
 
 bool xtouch_wifi_setup()
 {
+    ConsoleInfo.println(F("[XTOUCH][CONNECTION] WiFi Setup Start"));
     DynamicJsonDocument wifiConfig = xtouch_load_config();
     if (wifiConfig.isNull() || !wifiConfig.containsKey("ssid") || !wifiConfig.containsKey("pwd"))
     {
+        ConsoleInfo.println(F("[XTOUCH][CONNECTION] WiFi no config"));
         lv_label_set_text(introScreenCaption, wifiConfig.isNull() ? LV_SYMBOL_SD_CARD " Missing provisioning.json" : LV_SYMBOL_WARNING " Inaccurate provisioning.json");
         lv_obj_set_style_text_color(introScreenCaption, lv_color_hex(0xFF0000), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_timer_handler();
