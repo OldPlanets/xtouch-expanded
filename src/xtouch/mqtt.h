@@ -493,6 +493,61 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
 
                 JsonArray array = incomingJson["print"]["ams"]["ams"].as<JsonArray>();
                 bambuStatus.ams = array.size() > 0;
+                if (array.size() > 0)
+                {
+                    const JsonObject firstAms = array[0];
+
+                    if (firstAms.containsKey("humidity_raw"))
+                    {
+                        bambuStatus.ams_humidity_raw = firstAms["humidity_raw"].as<String>().toInt();
+                    }
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        strcpy(bambuStatus.tray_sub_brands[i], "");
+                        bambuStatus.tray_color[i] = 0;
+                        bambuStatus.tray_remain[i] = 100;
+                        bambuStatus.tray_state[i] = -1;
+
+                        if (firstAms.containsKey("tray"))
+                        {
+                            JsonArray trayArray = firstAms["tray"].as<JsonArray>();
+                            if (i < trayArray.size())
+                            {
+                                JsonObject currentTray = trayArray[i];
+
+                                // Extract tray_sub_brands (use tray_type if empty)
+                                if (currentTray.containsKey("tray_sub_brands"))
+                                {
+                                    String subBrands = currentTray["tray_sub_brands"].as<String>();
+                                    if (subBrands.length() == 0 && currentTray.containsKey("tray_type"))
+                                    {
+                                        subBrands = currentTray["tray_type"].as<String>();
+                                    }
+                                    strncpy(bambuStatus.tray_sub_brands[i], subBrands.c_str(), sizeof(bambuStatus.tray_sub_brands[i]) - 1);
+                                    bambuStatus.tray_sub_brands[i][sizeof(bambuStatus.tray_sub_brands[i]) - 1] = '\0';
+                                }
+
+                                if (currentTray.containsKey("tray_color"))
+                                {
+                                    String colorStr = currentTray["tray_color"].as<String>();
+                                    bambuStatus.tray_color[i] = strtoul(colorStr.c_str(), NULL, 16);
+                                }
+
+                                if (currentTray.containsKey("remain"))
+                                {
+                                    bambuStatus.tray_remain[i] = currentTray["remain"].as<int>();
+                                }
+
+                                if (currentTray.containsKey("state"))
+                                {
+                                    bambuStatus.tray_state[i] = currentTray["state"].as<int>();
+                                }
+                            }
+                        }
+                    }
+                }
+
                 xtouch_mqtt_sendMsg(XTOUCH_ON_AMS, array.size() > 0 ? 1 : 0);
 
                 long int last_ams_exist_bits = bambuStatus.ams_exist_bits;

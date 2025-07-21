@@ -119,7 +119,14 @@ extern "C"
         int m_tray_id;  // local tray id : "0" ~ "3"
         int m_tray_now; // tray_now : "0" ~ "15" or "254", "255"
         int m_tray_tar; // tray_tar : "0" ~ "15" or "255"
+        
         int stg_cur;
+        int ams_humidity_raw;
+        char tray_sub_brands[4][64];
+        long tray_color[4];
+        int tray_remain[4];
+        int tray_state[4];
+        int tray_count;         
 
     } XTouchBambuStatus;
 

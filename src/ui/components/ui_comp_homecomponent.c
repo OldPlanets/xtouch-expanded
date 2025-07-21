@@ -18,9 +18,10 @@ const char *xtouch_device_get_print_state()
     }
 }
 
-const char* xtouch_device_get_current_stage()
+const char *xtouch_device_get_current_stage()
 {
-    switch(bambuStatus.stg_cur) {
+    switch (bambuStatus.stg_cur)
+    {
     case 0:
         return "Printing";
     case 1:
@@ -125,12 +126,10 @@ const char* xtouch_device_get_current_stage()
         return "Heated bed cooling";
     case 51:
         return "Printing calibration lines";
-    default:
-        ;
+    default:;
     }
     return "";
 }
-
 
 void ui_event_comp_homeComponent_mainScreenPlayPauseButton(lv_event_t *e)
 {
@@ -283,11 +282,70 @@ void onXTouchAMS(lv_event_t *e)
 
     lv_obj_t *target = lv_event_get_target(e);
     lv_msg_t *m = lv_event_get_msg(e);
+    lv_obj_t **comp_homeComponent = lv_event_get_user_data(e);
 
     struct XTOUCH_MESSAGE_DATA *message = (struct XTOUCH_MESSAGE_DATA *)m->payload;
     if (message->data == 1)
     {
         lv_obj_clear_flag(target, LV_OBJ_FLAG_HIDDEN);
+
+        lv_obj_t *color_objs[4] = {
+            comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENSTATUSBAR_MAINSCREENAMS_MAINSCREENAMSCOLOR0],
+            comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENSTATUSBAR_MAINSCREENAMS_MAINSCREENAMSCOLOR1],
+            comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENSTATUSBAR_MAINSCREENAMS_MAINSCREENAMSCOLOR2],
+            comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENSTATUSBAR_MAINSCREENAMS_MAINSCREENAMSCOLOR3]};
+            
+        for (int i = 0; i < 4; i++)
+        {
+
+            lv_obj_clear_flag(color_objs[i], LV_OBJ_FLAG_HIDDEN);
+
+            lv_color_t tray_color = lv_color_hex(bambuStatus.tray_color[i] >> 8);
+
+            if (bambuStatus.tray_remain[i] < 100 && bambuStatus.tray_state[i] > 0)
+            {
+                lv_obj_set_style_border_width(color_objs[i], 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_color(color_objs[i], tray_color, LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_opa(color_objs[i], 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+                lv_obj_t *fill_indicator = lv_obj_get_child(color_objs[i], 0);
+                if (fill_indicator == NULL)
+                {
+                    fill_indicator = lv_obj_create(color_objs[i]);
+                    lv_obj_set_style_border_width(fill_indicator, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_obj_set_style_radius(fill_indicator, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_obj_clear_flag(fill_indicator, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK |
+                                                          LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_GESTURE_BUBBLE |
+                                                          LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE |
+                                                          LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM |
+                                                          LV_OBJ_FLAG_SCROLL_CHAIN);
+                }
+
+                lv_obj_clear_flag(fill_indicator, LV_OBJ_FLAG_HIDDEN);
+
+                lv_obj_set_style_bg_color(fill_indicator, tray_color, LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_bg_opa(fill_indicator, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+                lv_obj_set_align(fill_indicator, LV_ALIGN_BOTTOM_LEFT);
+                lv_obj_set_width(fill_indicator, lv_pct(100));
+                lv_obj_set_height(fill_indicator, lv_pct(bambuStatus.tray_remain[i] >= 0 ? bambuStatus.tray_remain[i] : 100));
+
+                lv_obj_set_style_bg_color(color_objs[i], lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_bg_opa(color_objs[i], 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+            }
+            else
+            {
+                lv_obj_set_style_bg_color(color_objs[i], bambuStatus.tray_state[i] > 0 ? tray_color : lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_bg_opa(color_objs[i], 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_width(color_objs[i], 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+                lv_obj_t *fill_indicator = lv_obj_get_child(color_objs[i], 0);
+                if (fill_indicator != NULL)
+                {
+                    lv_obj_add_flag(fill_indicator, LV_OBJ_FLAG_HIDDEN);
+                }
+            }
+        }
     }
     else
     {
@@ -400,8 +458,7 @@ void onXTouchPrintStatus(lv_event_t *e)
         break;
     }
 
-    if ((bambuStatus.print_status == XTOUCH_PRINT_STATUS_PAUSED || bambuStatus.print_status == XTOUCH_PRINT_STATUS_RUNNING ||  bambuStatus.print_status == XTOUCH_PRINT_STATUS_PREPARE)
-            && bambuStatus.stg_cur != 0 && xtouch_device_get_current_stage()[0] != '\0')
+    if ((bambuStatus.print_status == XTOUCH_PRINT_STATUS_PAUSED || bambuStatus.print_status == XTOUCH_PRINT_STATUS_RUNNING || bambuStatus.print_status == XTOUCH_PRINT_STATUS_PREPARE) && bambuStatus.stg_cur != 0 && xtouch_device_get_current_stage()[0] != '\0')
     {
         lv_obj_add_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER2], LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER_MAINSCREENCONTROLLER3], LV_OBJ_FLAG_HIDDEN);
@@ -544,7 +601,7 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     lv_obj_set_x(cui_mainScreenAMSColor0, 386);
     lv_obj_set_y(cui_mainScreenAMSColor0, 178);
     lv_obj_set_flex_flow(cui_mainScreenAMSColor0, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(cui_mainScreenAMSColor0, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_flex_align(cui_mainScreenAMSColor0, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END);
     lv_obj_clear_flag(cui_mainScreenAMSColor0, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_GESTURE_BUBBLE | LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN); /// Flags
     lv_obj_set_scrollbar_mode(cui_mainScreenAMSColor0, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_radius(cui_mainScreenAMSColor0, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -567,7 +624,7 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     lv_obj_set_x(cui_mainScreenAMSColor1, 386);
     lv_obj_set_y(cui_mainScreenAMSColor1, 178);
     lv_obj_set_flex_flow(cui_mainScreenAMSColor1, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(cui_mainScreenAMSColor1, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_flex_align(cui_mainScreenAMSColor1, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END);
     lv_obj_clear_flag(cui_mainScreenAMSColor1, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_GESTURE_BUBBLE | LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN); /// Flags
     lv_obj_set_scrollbar_mode(cui_mainScreenAMSColor1, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_radius(cui_mainScreenAMSColor1, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -590,7 +647,7 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     lv_obj_set_x(cui_mainScreenAMSColor2, 386);
     lv_obj_set_y(cui_mainScreenAMSColor2, 178);
     lv_obj_set_flex_flow(cui_mainScreenAMSColor2, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(cui_mainScreenAMSColor2, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_flex_align(cui_mainScreenAMSColor2, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END);
     lv_obj_clear_flag(cui_mainScreenAMSColor2, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_GESTURE_BUBBLE | LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN); /// Flags
     lv_obj_set_scrollbar_mode(cui_mainScreenAMSColor2, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_radius(cui_mainScreenAMSColor2, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -613,7 +670,7 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     lv_obj_set_x(cui_mainScreenAMSColor3, 386);
     lv_obj_set_y(cui_mainScreenAMSColor3, 178);
     lv_obj_set_flex_flow(cui_mainScreenAMSColor3, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(cui_mainScreenAMSColor3, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_flex_align(cui_mainScreenAMSColor3, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END);
     lv_obj_clear_flag(cui_mainScreenAMSColor3, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_GESTURE_BUBBLE | LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN); /// Flags
     lv_obj_set_scrollbar_mode(cui_mainScreenAMSColor3, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_radius(cui_mainScreenAMSColor3, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1223,7 +1280,7 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     lv_obj_add_event_cb(cui_mainScreenNozzleTempIcon, onXTouchBedTempTarget, LV_EVENT_MSG_RECEIVED, NULL);
     lv_msg_subsribe_obj(XTOUCH_ON_NOZZLE_TARGET_TEMP, cui_mainScreenNozzleTempIcon, NULL);
 
-    lv_obj_add_event_cb(cui_mainScreenAMS, onXTouchAMS, LV_EVENT_MSG_RECEIVED, NULL);
+    lv_obj_add_event_cb(cui_mainScreenAMS, onXTouchAMS, LV_EVENT_MSG_RECEIVED, children);
     lv_msg_subsribe_obj(XTOUCH_ON_AMS, cui_mainScreenAMS, NULL);
 
     lv_obj_add_event_cb(cui_mainScreenWifiIcon, onXTouchWifiSignal, LV_EVENT_MSG_RECEIVED, NULL);
