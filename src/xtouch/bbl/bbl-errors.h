@@ -10,23 +10,23 @@ extern "C"
 
 extern int hms_error_length;
 
-extern const char *hms_error_keys[] PROGMEM;
+extern const char* const hms_error_keys[] PROGMEM;
 
-extern const char *hms_error_values[] PROGMEM;
+extern const char* const hms_error_values[] PROGMEM;
 
 extern int device_error_length;
 
-extern const char *device_error_keys[] PROGMEM;
+extern const char* const device_error_keys[] PROGMEM;
 
-extern const char *device_error_values[] PROGMEM;
+extern const char* const device_error_values[] PROGMEM;
 
 extern int message_containing_retry_total;
 
 extern int message_containing_done_total;
 
-extern const char *message_containing_retry[] PROGMEM;
+extern const char* const message_containing_retry[] PROGMEM;
 
-extern const char *message_containing_done[] PROGMEM;
+extern const char* const message_containing_done[] PROGMEM;
 
 #ifdef __cplusplus
 }
